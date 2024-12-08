@@ -51,7 +51,7 @@ Calculator::Calculator(float &currentValue) : //
 {
 }
 
-void Calculator::execute(cType command) {
+void Calculator::execute(CommandType command) {
 	command->execute();
 	history.push(command);
 
