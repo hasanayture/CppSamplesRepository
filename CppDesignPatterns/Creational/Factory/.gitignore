@@ -1,0 +1,7 @@
+# Ignore the entire build directory
+/build/*
+
+# Un-ignore specific files inside the build directory
+!/build/buildDebug.sh
+!/build/buildXcodeDebug.sh
+!/build/CMakeLists.txt
