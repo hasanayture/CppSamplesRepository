@@ -1,39 +1,90 @@
-#include "CommandDesignPattern.h"
 #include <iostream>
+#include <vector>
+#include <memory>
+#include <stack>
 
-using std::cout;
-using std::make_shared;
+class ICommand {
+public:
+    virtual void execute() = 0;
+    virtual void undo() = 0;
+    virtual ~ICommand() = default;
+};
 
-using namespace CommandDesignPattern;
+class Vehicle {
+    int x = 0;
+    int y = 0;
+public:
+    void moveRight() { x++; }
+    void moveLeft() { x--; }
+    void moveUp() { y++; }
+    void moveDown() { y--; }
+    void printPosition() { std::cout << "(" << x << ", " << y << ")\n"; }
+};
 
-int main(int argc, char **argv) {
+class MoveRightCommand : public ICommand {
+    Vehicle& vehicle;
+public:
+    MoveRightCommand(Vehicle& v) : vehicle(v) {}
+    void execute() override { vehicle.moveRight(); }
+    void undo() override { vehicle.moveLeft(); }
+};
 
-	float currentValue { 0.0 };
-	Calculator calculator(currentValue); //(currentValue);
-	auto add5Command = make_shared<AddCommand>(currentValue, 5);
-	auto subtract7Command = make_shared<SubtractCommand>(currentValue, 7);
+class MoveLeftCommand : public ICommand {
+    Vehicle& vehicle;
+public:
+    MoveLeftCommand(Vehicle& v) : vehicle(v) {}
+    void execute() override { vehicle.moveLeft(); }
+    void undo() override { vehicle.moveRight(); }
+};
 
-	cout << "Initial value: " << currentValue << std::endl;
-	for (int i = 0; i < 5; i++) {
-		calculator.execute(add5Command);
-		cout << "After add5Command, the value: " << currentValue << std::endl;
-	}
-	for (int i = 0; i < 5; i++) {
-		calculator.undo();
-		cout << "After undo, the value: " << currentValue << std::endl;
-	}
+class MoveUpCommand : public ICommand {
+    Vehicle& vehicle;
+public:
+    MoveUpCommand(Vehicle& v) : vehicle(v) {}
+    void execute() override { vehicle.moveUp(); }
+    void undo() override { vehicle.moveDown(); }
+};
 
-	for (int i = 0; i < 5; i++) {
-		calculator.execute(subtract7Command);
-		cout << "After subtract7Command, the value: " << currentValue << std::endl;
-	}
+class MoveDownCommand : public ICommand {
+    Vehicle& vehicle;
+public:
+    MoveDownCommand(Vehicle& v) : vehicle(v) {}
+    void execute() override { vehicle.moveDown(); }
+    void undo() override { vehicle.moveUp(); }
+};
 
-	for (int i = 0; i < 5; i++) {
-		calculator.undo();
-		cout << "After undo, the value: " << currentValue << std::endl;
-	}
+class CommandManager {
+    std::vector<std::unique_ptr<ICommand>> commands;
+    std::stack<ICommand*> history;
+public:
+    void addCommand(std::unique_ptr<ICommand> cmd) {
+        cmd->execute();
+        history.push(cmd.get());
+        commands.push_back(std::move(cmd));
+    }
+    void undoLast() {
+        if (!history.empty()) {
+            history.top()->undo();
+            history.pop();
+        }
+    }
+};
 
-	std::cout << "\nMAIN END" << std::endl;
-	return 0;
+int main() {
+    Vehicle v;
+    CommandManager manager;
+
+    manager.addCommand(std::make_unique<MoveRightCommand>(v));
+    manager.addCommand(std::make_unique<MoveUpCommand>(v));
+    manager.addCommand(std::make_unique<MoveUpCommand>(v));
+    manager.addCommand(std::make_unique<MoveRightCommand>(v));
+
+    v.printPosition();
+
+    manager.undoLast();
+    manager.undoLast();
+
+    v.printPosition();
+
+    return 0;
 }
-
